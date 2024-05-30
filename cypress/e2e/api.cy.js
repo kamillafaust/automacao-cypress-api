@@ -1,22 +1,18 @@
 /// <reference types="Cypress"/>
 const dayjs = require("dayjs");
 describe("Teste de API", () => {
-  let token;
 
   before(() => {
-    cy.getToken("a@a", "a").then((tkn) => {
-      token = tkn;
-    });
+    cy.getToken("a@a", "a")
   });
 
   beforeEach(() => {
-    cy.resetRest(token);
+    cy.resetRest();
   });
   it("Criar uma conta", () => {
     cy.request({
       method: "POST",
       url: "/contas",
-      headers: { Authorization: `JWT ${token}` },
       body: {
         nome: "teste via api",
       },
@@ -30,12 +26,10 @@ describe("Teste de API", () => {
   });
 
   it("Alterar uma conta", () => {
-    cy.getAccountByName("Conta para alterar", token).then((resp) => {
-      console.log("resp", resp.body[0].id);
+    cy.getAccountByName("Conta para alterar").then((resp) => {
       cy.request({
         url: `/contas/${resp.body[0].id}`,
         method: "PUT",
-        headers: { Authorization: `JWT ${token}` },
         body: {
           nome: "conta alterada via api",
         },
@@ -48,7 +42,6 @@ describe("Teste de API", () => {
     cy.request({
       method: "POST",
       url: "/contas",
-      headers: { Authorization: `JWT ${token}` },
       body: {
         nome: "Conta mesmo nome",
       },
@@ -60,16 +53,14 @@ describe("Teste de API", () => {
         expect(res.body.error).to.be.equal(
           "Já existe uma conta com esse nome!"
         );
-      console.log(res);
     });
   });
 
   it("Deverá criar uma transação", () => {
-    cy.getAccountByName("Conta para movimentacoes", token).then((resp) => {
+    cy.getAccountByName("Conta para movimentacoes").then((resp) => {
       cy.request({
         method: "POST",
         url: "/transacoes",
-        headers: { Authorization: `JWT ${token}` },
         body: {
           conta_id: resp.body[0].id,
           data_pagamento: dayjs().add(1, "day").format("DD/MM/YYYY"),
@@ -87,11 +78,10 @@ describe("Teste de API", () => {
   });
 
   it("Deverá realizar o cálculo de saldo", () => {
-    cy.getTransactionsByDescriptions('Movimentacao 1, calculo saldo', token).then(resp => {
+    cy.getTransactionsByDescriptions('Movimentacao 1, calculo saldo').then(resp => {
       cy.request({
         method: "PUT",
         url:`/transacoes/${resp.body[0].id}`,
-        headers: { Authorization: `JWT ${token}` },
         body: {
           conta_id: resp.body[0].conta_id,
           data_pagamento: dayjs(resp.body[0].data_pagamento).format("DD/MM/YYYY"),
@@ -111,7 +101,6 @@ describe("Teste de API", () => {
     cy.request({
       method: "GET",
       url: "/saldo",
-      headers: { Authorization: `JWT ${token}` },
     }).then((resp) => {
       let saldoConta = null;
       resp.body.forEach((c) => {
@@ -124,13 +113,12 @@ describe("Teste de API", () => {
     });
   });
 
-  it.only('Deverá remover uma transação', () => {
-    cy.getTransactionsByDescriptions('Movimentacao para exclusao', token)
+  it('Deverá remover uma transação', () => {
+    cy.getTransactionsByDescriptions('Movimentacao para exclusao')
     .then(resp => {
       cy.request({
         method: 'DELETE',
         url: `/transacoes/${resp.body[0].id}`,
-        headers: { Authorization: `JWT ${token}` },
       }).its('status').should('be.equal', 204);
     })
   })

@@ -11,23 +11,22 @@ Cypress.Commands.add("getToken", (user, passwd) => {
     .its("body.token")
     .should("not.be.empty")
     .then((token) => {
+      Cypress.env('token', token)
       return token;
     });
 });
 
-Cypress.Commands.add("resetRest", (token) => {
+Cypress.Commands.add("resetRest", () => {
   cy.request({
     method: "GET",
     url: "/reset",
-    headers: { Authorization: `JWT ${token}` },
   });
 });
 
-Cypress.Commands.add("getAccountByName", (name, token) => {
+Cypress.Commands.add("getAccountByName", (name) => {
   cy.request({
     method: "GET",
     url: "/contas",
-    headers: { Authorization: `JWT ${token}` },
     qs: {
       nome: name,
     },
@@ -36,13 +35,24 @@ Cypress.Commands.add("getAccountByName", (name, token) => {
   });
 });
 
-Cypress.Commands.add('getTransactionsByDescriptions', (description, token) => {
+Cypress.Commands.add('getTransactionsByDescriptions', (description) => {
   cy.request({
     method: "GET",
     url: "/transacoes",
-    headers: { Authorization: `JWT ${token}` },
     qs: {descricao: description}
   }).then(resp =>{
     return resp;
   })
+})
+
+Cypress.Commands.overwrite('request', (originalFn, ...options) =>{
+  if(options.length === 1) {
+    if(Cypress.env('token')) {
+      options[0].headers = {
+        Authorization: `JWT ${Cypress.env('token')}`
+      }
+    }
+  }
+
+  return originalFn(...options)
 })
